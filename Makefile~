@@ -1,0 +1,2 @@
+libsrtr.so: srtr.c
+	gcc -shared srtr.c -o libsrtr.so -fPIC
