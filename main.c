@@ -7,18 +7,19 @@
 #include <pthread.h>
 
 int endflag=0;
+pthread_mutex_t mutex;
 
 void* thread(void* args){
     int i=0;
-    while(1){
+    while(i<3){
         pthread_testcancel();
         sleep(1);
-        if(i>3){
-            timeout(0);
-            endflag=1;
-        }
         i++;
     }
+    timeout(1);
+    pthread_mutex_lock( &mutex );
+    endflag=1;
+    pthread_mutex_unlock(&mutex);
     return NULL;
 }
 
@@ -26,10 +27,11 @@ int main(){
 
     int** idList;
     int** keyList;
-    int* buf;
-    int i=0,j;
-    char *c;
+    int* buf,p;
+    int i=0,j,mflag=0,eflag=0;
+    char *c,*pre;
     pthread_t th;
+    pthread_mutex_init( &mutex, NULL );
 
     int  x, y, w, h;
     char *str="し　り　ト　レ";
@@ -42,7 +44,8 @@ int main(){
     char *str8="タイムアウトー！";
     char *str9="残念、「%s」はありません";
     char *str10="残念、「%s」は使用済みです";
-    char *str11="Please press <ESC> to exit...";
+    char *str11="最後と最初の文字が合ってないです";
+    char *str12="Please press <ESC> to exit...";
     int key;
 
     setlocale(LC_ALL,"");
@@ -74,8 +77,16 @@ int main(){
         refresh();
 
         key = getch();
-        if (key == 'q') break;
-        if (key == 10 && y==cy) break;
+        if (key == 'q'){
+            endwin();
+            return 0;
+        }
+        if (key == 10 && y==cy){
+            break;
+        }else if(key==10 && y==cy+1){
+            mflag=1;
+            break;
+        }
         switch (key) {
             case KEY_UP:	y=cy; break;
             case KEY_DOWN:	y=cy+1; break;
@@ -92,60 +103,89 @@ int main(){
     nocbreak();
     echo();
     curs_set(1);
+    p=calloc(100,sizeof(int));
+    pre=malloc(sizeof(char)*100);
+    pre="しりとり";
+    if(mflag) pre="CPU";
     while(1){
         erase();
-        mvprintw(cy,cx-strlen(str6)/2-10,str6);
+        mvprintw(cy,cx-strlen(pre)/2-10,pre);
         mvprintw(cy,cx-strlen(str7)/2-5,str7);
         refresh();
 
         pthread_create( &th, NULL, thread, (void *)NULL );
         c=malloc(sizeof(char)*100);
-        scanw("%s",c);
-        
+        if(!mflag) scanw("%s",c);
+        else{
+            if(i%2==0) scanw("%s",c);
+            else{
+                srtr_ai(pre,keyList,idList,1,p);
+                itos(p,c);
+            }
+        }
+
         buf=calloc(100,sizeof(int));
         while(input_word(c,buf)!=0){
             c=malloc(sizeof(char)*100);
             erase();
-            mvprintw(cy,cx-strlen(str6)/2-10,str6);
+            mvprintw(cy,cx-strlen(pre)/2-10,pre);
             mvprintw(cy,cx-strlen(str7)/2-5,str7);
             refresh();
-            scanw("%s",c);
+            if(!mflag) scanw("%s",c);
+            else{
+                if(i%2!=0) scanw("%s",c);
+                else{
+                    srtr_ai(pre,keyList,idList,1,p);
+                    itos(p,c);
+                }
+            }
         }
         pthread_cancel(th);
-        if(searchid(buf,keyList)){
-            endflag=2;
+
+        idList[i]=calloc(100,sizeof(int));
+        if(endflag==1){
+            eflag=1;
             break;
         }
-        idList[i]=calloc(100,sizeof(int));
-        if(!searchid(buf,idList)){
-            endflag=3;
+        else if(searchid(buf,keyList)){
+            eflag=2;
+            break;
+        }
+        else if(!searchid(buf,idList)){
+            eflag=3;
+            break;
+        }
+        else if(i!=0&&!match_id(idList[i-1],buf)){
+            eflag=4;
             break;
         }
         j=0;
         while(buf[j]!=0){
             idList[i][j]=buf[j]; j++;
         }
-        
+
         i++;
-        str6=malloc(sizeof(char)*100);
-        strcpy(str6,c);
+        pre=malloc(sizeof(char)*100);
+        strcpy(pre,c);
     }
-    
     cbreak();
-    curs_set(0);
+    timeout(-1);
     while(1){
-        erase();/*
-        switch(endflag){
-            case 1: mvprintw(cy,cx-strlen(str8)/2,str8); break;
-            case 2: mvprintw(cy,cx-strlen(str9)/2,str9); break;
-            case 3: mvprintw(cy,cx-strlen(str10)/2,str10); break;
-        }*/
-        mvprintw(cy+1,cx-strlen(str11)/2,str11);
+        erase();
+        switch(eflag){
+            case 1: mvprintw(cy,cx-strlen(str8)/2+4,str8); break;
+            case 2: mvprintw(cy,cx-strlen(str9)/2+4,str9,c); break;
+            case 3: mvprintw(cy,cx-strlen(str10)/2+4,str10,c); break;
+            case 4: mvprintw(cy,cx-strlen(str11)/2+8,str11,c); break;
+            default: mvprintw(cy,cx-strlen("ERROR")/2+8,"ERROR"); break; 
+        }
+        mvprintw(cy+1,cx-strlen(str12)/2,str12);
         refresh();
         key = getch();
         if(key==27) break;
     }
     endwin();
+    pthread_mutex_destroy( &mutex );
     free(keyList);
     free(idList);
     return 0;
