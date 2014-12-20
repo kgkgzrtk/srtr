@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <syslog.h>
 
 #define C_MAX 301
 #define I_MAX 100
 #define KEY_MAX 2000
+
 
 int input_word(char *s, int *list){
     int i,j;
@@ -108,6 +110,14 @@ int checkStyle(int *h, int size){
     return 0;
 }
 
+int intcpy(int *a, int *b){
+    int i=0;
+    while(b[i]!=0){
+        a[i]=b[i];
+    }
+    return 0;
+}
+
 int intcmp(int *a, int *b){
     int i=0;
     while(a[i]!=0||b[i]!=0){
@@ -140,7 +150,11 @@ int rand_time(int min, int max){
 
 int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     int k=0;
+    char *c=malloc(sizeof(char)*100);
+    syslog(LOG_USER,"begin srtr_ai\n");
     while(keyList[k][0]!=0) k++;
-    while(match_id(pre_str,keyList[rand_time(0,k-1)])) strcpy(p,keyList[rand_time(0,k-1)]);
+    syslog(LOG_USER,"get keyList[0] =%s",itos(c,keyList[rand_time(0,k-1)]));
+    while(!match_id(pre_str,keyList[rand_time(0,k-1)])) intcpy(p,keyList[rand_time(0,k-1)]);
+    syslog(LOG_USER,"Check p[0]= %d\n",p[0]);
     return 0;
 }

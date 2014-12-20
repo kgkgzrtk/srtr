@@ -6,12 +6,19 @@
 #include <locale.h>
 #include <pthread.h>
 
+#define CNT_MAX 5
+
 int endflag=0;
 pthread_mutex_t mutex;
 
 void* thread(void* args){
-    int i=0;
-    while(i<3){
+    int i=0,x,y,h,w;
+    while(i<CNT_MAX){
+        getmaxyx(stdscr,h,w);
+        getyx(stdscr,y,x);
+        mvprintw(4,w-5,"%d",CNT_MAX-i);
+        move(y,x);
+        refresh();
         pthread_testcancel();
         sleep(1);
         i++;
@@ -137,6 +144,7 @@ int main(){
                 else{
                     srtr_ai(pre,keyList,idList,1,p);
                     itos(p,c);
+                    break;
                 }
             }
         }
