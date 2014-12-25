@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <syslog.h>
+#include "MT.h"
 
 #define C_MAX 301
 #define I_MAX 100
@@ -18,19 +19,6 @@ int input_word(char *s, int *list){
     if(checkStyle(h, val)) return 1;
     for(i=0;i<val;i++) list[i]=toid(h[i]);
     free(h);
-    return 0;
-}
-
-int itos(int *id, char *str){
-    int i=0,*h;
-    str=malloc(sizeof(char*)*C_MAX);
-
-    while(id[i]=0){
-        h[i]=calloc(I_MAX,sizeof(int));
-        h[i]=tocode(id[i]);
-        i++;
-    }
-    ctoStr(h,str,i-1);
     return 0;
 }
 
@@ -72,12 +60,12 @@ int stoCode(unsigned char *s, int *h){
     }
     return 0;
 }
-int ctoStr(int *h, unsigned char *a, int size){
+int itos(int *h, unsigned char *a){
     int i;
-    for(i=0;i<size;i++){
-        a[0+3*i]=tocode(h[i])>>16&0x000000FF;
-        a[1+3*i]=tocode(h[i])>>8&0x000000FF;
-        a[2+3*i]=tocode(h[i])&0x000000FF;
+    for(i=0;h[i]!=0;i++){
+        a[0+3*i]=tocode(h[i]-1)>>16&0x000000FF;
+        a[1+3*i]=tocode(h[i]-1)>>8&0x000000FF;
+        a[2+3*i]=tocode(h[i]-1)&0x000000FF;
     }
     a[3+3*(i-1)]='\0';
     return 0;
@@ -143,18 +131,34 @@ int match_id(int *pre_str, int *str){
     return 0;
 }
 
-int rand_time(int min, int max){
-    srand((unsigned int)time(NULL));
-    return min+rand()%max;
+int init_randd(){
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    init_genrand((unsigned)tv.tv_usec);
+    return 0;
+}
+
+
+int randd(int min, int max){
+    return min+genrand_int32()%(max-min+1);
 }
 
 int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     int k=0;
+    int *key_id=calloc(100,sizeof(int));
     char *c=malloc(sizeof(char)*100);
+    sleep(1);
+    init_randd();
     syslog(LOG_USER,"begin srtr_ai\n");
     while(keyList[k][0]!=0) k++;
-    syslog(LOG_USER,"get keyList[0] =%s",itos(c,keyList[rand_time(0,k-1)]));
-    while(!match_id(pre_str,keyList[rand_time(0,k-1)])) intcpy(p,keyList[rand_time(0,k-1)]);
-    syslog(LOG_USER,"Check p[0]= %d\n",p[0]);
+    syslog(LOG_USER,"k = %d",k);
+    itos(keyList[randd(0,k-1)],c);
+    syslog(LOG_USER,"get genrand key =%s",c);
+    intcpy(key_id,keyList[randd(0,k-1)]);
+    while(!match_id(pre_str,key_id)){
+        intcpy(key_id,keyList[randd(0,k-1)]);
+        syslog(LOG_USER,"key0 ---> %d\n",key_id[0]);
+    }
+    syslog(LOG_USER,"Check p[0]= %d\n",key_id[0]);
     return 0;
 }
