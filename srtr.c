@@ -12,7 +12,7 @@
 
 int input_word(char *s, int *list){
     int i,j;
-    int *h=calloc(I_MAX,sizeof(int));
+    int *h=(int *)calloc(I_MAX,sizeof(int));
     int val = (int)(strlen(s)/3);
 
     if(stoCode(s,h)) return 1;
@@ -30,7 +30,7 @@ int input_file(char *fname,int** s){
     if( fp == NULL ) return 1;
 
     a=malloc(sizeof(char*)*C_MAX);
-    s[0]=calloc(I_MAX,sizeof(int));
+    s[0]=(int *)calloc(I_MAX,sizeof(int));
     while((c=fgetc(fp))!=EOF){
         if(c!='\n'){
             a[i]=c;
@@ -42,7 +42,7 @@ int input_file(char *fname,int** s){
             }
             i=0;val=0;n++;
             a=malloc(sizeof(char*)*C_MAX);
-            s[n]=calloc(I_MAX,sizeof(int));
+            s[n]=(int *)calloc(I_MAX,sizeof(int));
         }
     }
     free(a);
@@ -102,6 +102,7 @@ int intcpy(int *a, int *b){
     int i=0;
     while(b[i]!=0){
         a[i]=b[i];
+        i++;
     }
     return 0;
 }
@@ -128,7 +129,7 @@ int match_id(int *pre_str, int *str){
     int i=0;
     while(pre_str[i]!=0) i++;
     if(pre_str[i-1]==str[0]) return 1;
-    return 0;
+    else return 0;
 }
 
 int init_randd(){
@@ -145,9 +146,8 @@ int randd(int min, int max){
 
 int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     int k=0;
-    int *key_id=calloc(100,sizeof(int));
+    int *key_id=(int *)calloc(100,sizeof(int));
     char *c=malloc(sizeof(char)*100);
-    sleep(1);
     init_randd();
     syslog(LOG_USER,"begin srtr_ai\n");
     while(keyList[k][0]!=0) k++;
@@ -157,8 +157,8 @@ int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     intcpy(key_id,keyList[randd(0,k-1)]);
     while(!match_id(pre_str,key_id)){
         intcpy(key_id,keyList[randd(0,k-1)]);
-        syslog(LOG_USER,"key0 ---> %d\n",key_id[0]);
     }
     syslog(LOG_USER,"Check p[0]= %d\n",key_id[0]);
+    intcpy(key_id,p);
     return 0;
 }

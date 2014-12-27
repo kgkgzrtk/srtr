@@ -110,7 +110,7 @@ int main(){
     nocbreak();
     echo();
     curs_set(1);
-    p=calloc(100,sizeof(int));
+    p=(int *)calloc(100,sizeof(int));
     pre=malloc(sizeof(char)*100);
     pre="しりとり";
     if(mflag) pre="CPU";
@@ -126,12 +126,12 @@ int main(){
         else{
             if(i%2==0) scanw("%s",c);
             else{
-                srtr_ai(pre,keyList,idList,1,p);
+                srtr_ai(idList[i-1],keyList,idList,1,p);
                 itos(p,c);
             }
         }
 
-        buf=calloc(100,sizeof(int));
+        buf=(int *)calloc(100,sizeof(int));
         while(input_word(c,buf)!=0){
             c=malloc(sizeof(char)*100);
             erase();
@@ -142,7 +142,7 @@ int main(){
             else{
                 if(i%2!=0) scanw("%s",c);
                 else{
-                    srtr_ai(pre,keyList,idList,1,p);
+                    srtr_ai(idList[i-1],keyList,idList,1,p);
                     itos(p,c);
                     break;
                 }
@@ -150,7 +150,7 @@ int main(){
         }
         pthread_cancel(th);
 
-        idList[i]=calloc(100,sizeof(int));
+        idList[i]=(int *)calloc(100,sizeof(int));
         if(endflag==1){
             eflag=1;
             break;

@@ -1,0 +1,100 @@
+Highlighting groups for various occasions
+-----------------------------------------
+SpecialKey	SpecialKey
+NonText	NonText
+Directory	Directory TagListFileName NERDTreeUp NERDTreeDir
+ErrorMsg	ErrorMsg
+IncSearch	IncSearch
+Search	Search NERDTreeCurrentNode
+MoreMsg	MoreMsg
+ModeMsg	ModeMsg
+LineNr	LineNr
+Question	Question NERDTreeToggleOn
+StatusLine	StatusLine
+StatusLineNC	StatusLineNC
+VertSplit	VertSplit
+Title	Title NERDTreeClosable NERDTreeOpenable NERDTreeExecFile
+Visual	Visual
+VisualNOS	VisualNOS
+WarningMsg	WarningMsg NERDTreeToggleOff NERDTreeRO
+WildMenu	WildMenu
+Folded	Folded
+FoldColumn	FoldColumn
+DiffAdd	DiffAdd
+DiffChange	DiffChange
+DiffDelete	DiffDelete
+DiffText	DiffText
+SignColumn	SignColumn
+Conceal	Conceal
+SpellBad	SpellBad
+SpellCap	SpellCap
+SpellRare	SpellRare
+SpellLocal	SpellLocal
+Pmenu	Pmenu
+PmenuSel	PmenuSel
+PmenuSbar	PmenuSbar
+PmenuThumb	PmenuThumb
+TabLine	TabLine
+TabLineSel	TabLineSel
+TabLineFill	TabLineFill
+CursorColumn	CursorColumn
+CursorLine	CursorLine
+ColorColumn	ColorColumn
+Cursor	Cursor
+
+Syntax highlighting groups
+--------------------------
+lCursor	lCursor
+MatchParen	MatchParen
+Normal	Normal phpOperator phpRelation objcMethodArg vimOper NERDTreeFile NERDTreeBookmark
+Comment	Comment rubySharpBang cCppOut cCppOut2 cCppSkip cComment cCommentSkip cCommentL cCommentStart
+Constant	Constant Character Number Boolean Float diffRemoved phpBoolean phpNull javaScriptValue cOperator objcStatement cCharacter cNumber cFloat cOctal cConstant NERDTreeFlags
+Special	Special
+Identifier	Identifier phpSuperglobal phpVarSelector rubyInterpolationDelimiter erlangNode cFormat objcMethodName objcMessageName NERDTreeHelpKey NERDTreeHelpCommand NERDTreeDirSlash
+    NERDTreeBookmarkName
+Statement	Statement Conditional Repeat Label Keyword Exception pythonOperator erlangDirective luaOperator cStatement cLabel cConditional cRepeat cUserLabel NERDTreeCWD
+    NERDTreeBookmarksHeader
+PreProc	PreProc Include Define Macro PreCondit cOctalZero cPreCondit cInclude cDefine cPreProc NERDTreeHelpTitle NERDTreeLinkFile NERDTreeLinkDir
+Type	Type Typedef rubyConstant objcClass cocoaClass objcSubclass objcSuperclass cType NERDTreeLinkTarget NERDTreePartFile
+Underlined	Underlined
+Ignore	Ignore NERDTreeIgnore NERDTreeBookmarksLeader
+Error	Error cBadContinuation cError cSpecialError cCurlyError cErrInParen cErrInBracket cParenError cCommentStartError cOctalError cSpaceError cCommentError
+Todo	Todo cTodo
+String	String diffAdded rubyString cString cCppString cIncluded cCommentString cComment2String NERDTreeHelp
+Function	Function phpFunctions rubyFunction cocoaFunction
+StorageClass	StorageClass cStorageClass
+Structure	Structure Operator phpArrayPair cStructure
+Delimiter	Delimiter
+CursorLineNr	CursorLineNr
+StringDelimiter	StringDelimiter phpQuoteSingle phpQuoteDouble rubyStringDelimiter
+rubyClass	rubyClass rubyModule objcDirective
+rubyIdentifier	rubyIdentifier
+rubyInstanceVariable	rubyInstanceVariable rubyGlobalVariable
+rubySymbol	rubySymbol erlangAtom
+rubyControl	rubyControl
+rubyRegexpDelimiter	rubyRegexpDelimiter
+rubyRegexp	rubyRegexp javaScriptRegexpString coffeeRegExp
+rubyRegexpSpecial	rubyRegexpSpecial
+rubyPredefinedIdentifier	rubyPredefinedIdentifier erlangBIF erlangFunction
+DbgCurrent	DbgCurrent
+DbgBreakPt	DbgBreakPt
+IndentGuidesOdd	IndentGuidesOdd
+IndentGuidesEven	IndentGuidesEven
+PreciseJumpTarget	PreciseJumpTarget
+EasyMotionTarget	EasyMotionTarget
+EasyMotionShade	EasyMotionShade
+cCppParen	cCppParen
+cCppBracket	cCppBracket
+cBlock	cBlock
+cUserCont	cUserCont
+cBitField	cBitField
+cNumbersCom	cNumbersCom
+cParen	cParen
+cBracket	cBracket
+cNumbers	cNumbers
+cMulti	cMulti
+NERDTreeLink	NERDTreeLink
+	                   
+		    links to Special Tag SpecialChar SpecialComment Debug cSpecial cSpecialCharacter NERDTreePart
+	                   
+		    links to ErrorMsg
