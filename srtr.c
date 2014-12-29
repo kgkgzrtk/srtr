@@ -7,7 +7,7 @@
 
 #define C_MAX 301
 #define I_MAX 100
-#define KEY_MAX 2000
+#define K_MAX 2000
 
 
 int input_word(char *s, int *list){
@@ -145,20 +145,21 @@ int randd(int min, int max){
 }
 
 int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
-    int k=0;
+    int i=0,k=0;
     int *key_id=(int *)calloc(100,sizeof(int));
     char *c=malloc(sizeof(char)*100);
     init_randd();
-    syslog(LOG_USER,"begin srtr_ai\n");
     while(keyList[k][0]!=0) k++;
-    syslog(LOG_USER,"k = %d",k);
     itos(keyList[randd(0,k-1)],c);
-    syslog(LOG_USER,"get genrand key =%s",c);
     intcpy(key_id,keyList[randd(0,k-1)]);
-    while(!match_id(pre_str,key_id)){
-        intcpy(key_id,keyList[randd(0,k-1)]);
-    }
-    syslog(LOG_USER,"Check p[0]= %d\n",key_id[0]);
-    intcpy(key_id,p);
+    if(pre_str!=NULL)
+        while(!match_id(pre_str,key_id)){
+            napms((int)((k/2)/lv));
+            key_id=(int *)calloc(100,sizeof(int));
+            intcpy(key_id,keyList[randd(0,k-1)]);
+            i++;
+            if(i>k*2) return 1;
+        }
+    intcpy(p,key_id);
     return 0;
 }

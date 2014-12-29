@@ -6,39 +6,63 @@
 #include <locale.h>
 #include <pthread.h>
 
-#define CNT_MAX 5
+#define C_MAX 301
+#define I_MAX 100
+#define K_MAX 2000
+#define CNT_MAX 20
+#define FILENAME "key.txt"
 
 int endflag=0;
-pthread_mutex_t mutex;
 
 void* thread(void* args){
-    int i=0,x,y,h,w;
+    int i=0,k;
+    char *pro=(char *)malloc(sizeof(char)*C_MAX);
+    for(k=0;k<CNT_MAX;k++){
+        pro[k]='#';
+    }
+    pro[k]='\0';
+    k--;
     while(i<CNT_MAX){
-        getmaxyx(stdscr,h,w);
-        getyx(stdscr,y,x);
-        mvprintw(4,w-5,"%d",CNT_MAX-i);
-        move(y,x);
-        refresh();
         pthread_testcancel();
-        sleep(1);
-        i++;
+        printf("\e]0;%s\007",pro);
+        refresh();
+        if(i>CNT_MAX-4) flash();
+        pro[k]='\0';
+        napms(500);
+        k--;i++;
     }
     timeout(1);
-    pthread_mutex_lock( &mutex );
     endflag=1;
-    pthread_mutex_unlock(&mutex);
     return NULL;
+}
+
+void pri_ai(int y,int x,char *c){
+    int i;
+    curs_set(0);
+    raw();
+    noecho();
+    cbreak();
+    napms(500);
+    for(i=0;i<strlen(c)/3;i++){
+        mvprintw(y,x+2*i,"%c%c%c",c[3*i],c[3*i+1],c[3*i+2]);
+        refresh();
+        napms(500);
+    }
+    curs_set(1);
+    noraw();
+    echo();
+    nocbreak();
 }
 
 int main(){
 
     int** idList;
     int** keyList;
-    int* buf,p;
+    int* buf;
+    int *p;
     int i=0,j,mflag=0,eflag=0;
     char *c,*pre;
     pthread_t th;
-    pthread_mutex_init( &mutex, NULL );
 
     int  x, y, w, h;
     char *str="し　り　ト　レ";
@@ -56,6 +80,7 @@ int main(){
     int key;
 
     setlocale(LC_ALL,"");
+    printf("\e]0;しりトレ\007");
     initscr();
     noecho();
     cbreak();
@@ -99,58 +124,55 @@ int main(){
             case KEY_DOWN:	y=cy+1; break;
         }
     }
-    idList=malloc(sizeof(int *)*2000);
-    keyList=malloc(sizeof(int *)*2000);
-    if(input_file("key.txt",keyList)){
+
+    idList=malloc(sizeof(int *)*K_MAX);
+    keyList=malloc(sizeof(int *)*K_MAX);
+    if(input_file(FILENAME,keyList)){
         endwin();
         free(keyList);
         free(idList);
         return 0;
     }
+
     nocbreak();
     echo();
     curs_set(1);
-    p=(int *)calloc(100,sizeof(int));
-    pre=malloc(sizeof(char)*100);
+    pre=malloc(sizeof(char)*C_MAX);
     pre="しりとり";
     if(mflag) pre="CPU";
     while(1){
+        flushinp();
         erase();
         mvprintw(cy,cx-strlen(pre)/2-10,pre);
         mvprintw(cy,cx-strlen(str7)/2-5,str7);
         refresh();
 
         pthread_create( &th, NULL, thread, (void *)NULL );
-        c=malloc(sizeof(char)*100);
+        c=malloc(sizeof(char)*C_MAX);
         if(!mflag) scanw("%s",c);
         else{
             if(i%2==0) scanw("%s",c);
             else{
-                srtr_ai(idList[i-1],keyList,idList,1,p);
-                itos(p,c);
+                p=(int *)calloc(I_MAX,sizeof(int));
+                pre=malloc(sizeof(char)*C_MAX);
+                if(srtr_ai(idList[i-1],keyList,idList,1,p)) c="もうむり\0";
+                else itos(p,c);
+                pri_ai(cy,cx,c);
             }
         }
 
-        buf=(int *)calloc(100,sizeof(int));
-        while(input_word(c,buf)!=0){
-            c=malloc(sizeof(char)*100);
+        buf=(int *)calloc(I_MAX,sizeof(int));
+        while(input_word(c,buf)!=0&&!endflag){
+            c=malloc(sizeof(char)*C_MAX);
             erase();
             mvprintw(cy,cx-strlen(pre)/2-10,pre);
             mvprintw(cy,cx-strlen(str7)/2-5,str7);
             refresh();
-            if(!mflag) scanw("%s",c);
-            else{
-                if(i%2!=0) scanw("%s",c);
-                else{
-                    srtr_ai(idList[i-1],keyList,idList,1,p);
-                    itos(p,c);
-                    break;
-                }
-            }
+            scanw("%s",c);
         }
         pthread_cancel(th);
 
-        idList[i]=(int *)calloc(100,sizeof(int));
+        idList[i]=(int *)calloc(I_MAX,sizeof(int));
         if(endflag==1){
             eflag=1;
             break;
@@ -173,7 +195,7 @@ int main(){
         }
 
         i++;
-        pre=malloc(sizeof(char)*100);
+        pre=malloc(sizeof(char)*C_MAX);
         strcpy(pre,c);
     }
     cbreak();
@@ -193,7 +215,6 @@ int main(){
         if(key==27) break;
     }
     endwin();
-    pthread_mutex_destroy( &mutex );
     free(keyList);
     free(idList);
     return 0;
