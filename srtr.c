@@ -63,9 +63,9 @@ int stoCode(unsigned char *s, int *h){
 int itos(int *h, unsigned char *a){
     int i;
     for(i=0;h[i]!=0;i++){
-        a[0+3*i]=tocode(h[i]-1)>>16&0x000000FF;
-        a[1+3*i]=tocode(h[i]-1)>>8&0x000000FF;
-        a[2+3*i]=tocode(h[i]-1)&0x000000FF;
+        a[0+3*i]=tocode(h[i])>>16&0x000000FF;
+        a[1+3*i]=tocode(h[i])>>8&0x000000FF;
+        a[2+3*i]=tocode(h[i])&0x000000FF;
     }
     a[3+3*(i-1)]='\0';
     return 0;
@@ -73,7 +73,7 @@ int itos(int *h, unsigned char *a){
 
 int toid(int h){
     int x0=0xE38181,x81=0xE381BF,x82=0xE38280;
-    if(h==0xE383BC) return 83;
+    if(h==0xE383BC) return 84;
     h-=x0;
     if(h>62) h-=(x82-x81)-1;
     return h+1;
@@ -82,7 +82,8 @@ int toid(int h){
 
 int tocode(int h){
     int x0=0xE38181,x81=0xE381BF,x82=0xE38280;
-    if(h==83) return 0xE383BC;
+    if(h==84) return 0xE383BC;
+    h--;
     h+=x0;
     if(h>x81) h+=(x82-x81)-1;
     return h;
@@ -91,7 +92,7 @@ int tocode(int h){
 int checkStyle(int *h, int size){
     int i;
     for(i=0;i<size;i++){
-        if((h[i]>0xE38294||h[i]<0xE38180)&&h[i]!=0xE383BC){
+        if((h[i]>0xE38293||h[i]<0xE38181)&&h[i]!=0xE383BC){
             return 1;
         }
     }
@@ -125,11 +126,36 @@ int searchid(int *h, int **list){
     return 1;
 }
 
+int lastisN(int *str){
+    int i=0;
+    while(str[i]!=0) i++;
+    if(str[i-1]==83) return 1;
+    else return 0;
+}
+
 int match_id(int *pre_str, int *str){
     int i=0;
     while(pre_str[i]!=0) i++;
-    if(pre_str[i-1]==str[0]) return 1;
+    if(pre_str[i-2]==str[0]&&pre_str[i-1]==str[1]) return 0;
+    if(pre_str[i-1]==84) i--;
+    if(pre_str[i-2]==str[0]&&pre_str[i-1]==str[1]) return 0;
+    if(pre_str[i-1]%2==1&&pre_str[i-1]<10) pre_str[i-1]++;
+    if(pre_str[i-1]==str[0]) return 0;
+    else return 1;
+}
+
+int judgeStr(int *pre_str, int *str, int **idList, int **keyList){
+    int i=0;
+    if(pre_str==NULL){
+        if(lastisN(str)) return 4;
+        else return 0;
+    }
+    if(searchid(str,keyList)) return 1;
+    else if(!searchid(str,idList)) return 2;
+    else if(match_id(pre_str,str)) return 3;
+    else if(lastisN(str)) return 4;
     else return 0;
+    // ジャンル外 1, 使用済み 2, 頭尾不一致 3, 最後に'ん' 4
 }
 
 int init_randd(){
@@ -146,20 +172,37 @@ int randd(int min, int max){
 
 int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     int i=0,k=0;
+    int match_flag=0;
+    int mood=1;
     int *key_id=(int *)calloc(100,sizeof(int));
     char *c=malloc(sizeof(char)*100);
     init_randd();
-    while(keyList[k][0]!=0) k++;
+    while(keyList[k][0]!=0){
+        if(!judgeStr(pre_str,keyList[k],idList,keyList)) match_flag=1;
+        k++;
+    }
     itos(keyList[randd(0,k-1)],c);
     intcpy(key_id,keyList[randd(0,k-1)]);
-    if(pre_str!=NULL)
-        while(!match_id(pre_str,key_id)){
-            napms((int)((k/2)/lv));
+    if(!randd(0,lv)) match_flag=0;
+    if(pre_str==NULL) match_flag=1;
+    if(match_flag){
+        while(judgeStr(pre_str,key_id,idList,keyList)){
+            if(pre_str!=NULL) napms((int)((k/2)/lv));
             key_id=(int *)calloc(100,sizeof(int));
             intcpy(key_id,keyList[randd(0,k-1)]);
             i++;
-            if(i>k*2) return 1;
+            if(pre_str!=NULL) if(i>k*2) return 1;
+            if(i>k*100) return 1;
         }
+    }else{
+        while(match_id(pre_str,key_id)||!lastisN(key_id)){
+            if(pre_str!=NULL) napms((int)((k/2)/lv));
+            key_id=(int *)calloc(100,sizeof(int));
+            intcpy(key_id,keyList[randd(0,k-1)]);
+            i++;
+            if(i>k) return 1;
+        }
+    }
     intcpy(p,key_id);
     return 0;
 }

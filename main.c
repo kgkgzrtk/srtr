@@ -9,10 +9,11 @@
 #define C_MAX 301
 #define I_MAX 100
 #define K_MAX 2000
-#define CNT_MAX 20
-#define FILENAME "key.txt"
+#define CNT_MAX 40
+#define AILV 2
+#define FILENAME "poke.txt"
 
-int endflag=0;
+int timeflag=0;
 
 void* thread(void* args){
     int i=0,k;
@@ -31,8 +32,8 @@ void* thread(void* args){
         napms(500);
         k--;i++;
     }
-    timeout(1);
-    endflag=1;
+    timeout(0);
+    timeflag=1;
     return NULL;
 }
 
@@ -44,7 +45,7 @@ void pri_ai(int y,int x,char *c){
     cbreak();
     napms(500);
     for(i=0;i<strlen(c)/3;i++){
-        mvprintw(y,x+2*i,"%c%c%c",c[3*i],c[3*i+1],c[3*i+2]);
+        mvprintw(y,x+2*i-3,"%c%c%c",c[3*i],c[3*i+1],c[3*i+2]);
         refresh();
         napms(500);
     }
@@ -56,16 +57,18 @@ void pri_ai(int y,int x,char *c){
 
 int main(){
 
-    int** idList;
-    int** keyList;
-    int* buf;
+    int **idList;
+    int **keyList;
+    int *buf;
     int *p;
-    int i=0,j,mflag=0,eflag=0;
+    int *pre_id;
+    int i=1,j,mflag=0,eflag=0;
     char *c,*pre;
     pthread_t th;
 
     int  x, y, w, h;
     char *str="し　り　ト　レ";
+    char *str1="Please press <ESC> to exit...";
     char *str2="Please press <ENTER> to start!";
     char *str3="一人でしりとり";
     char *str4="ＣＰＵと対戦！";
@@ -76,16 +79,27 @@ int main(){
     char *str9="残念、「%s」はありません";
     char *str10="残念、「%s」は使用済みです";
     char *str11="最後と最初の文字が合ってないです";
-    char *str12="Please press <ESC> to exit...";
+    char *str12="最後の文字が「ん」です";
+    char *str13="YOU WIN! ( ^ - ^ )";
+    char *str14="YOU LOSE... (. _ . )";
     int key;
 
     setlocale(LC_ALL,"");
     printf("\e]0;しりトレ\007");
+
     initscr();
+
+    start_color();
+    use_default_colors();
+    init_pair(1,COLOR_RED,-1);
+    init_pair(2,-1,COLOR_BLUE);
+
     noecho();
     cbreak();
     curs_set(0);
     keypad(stdscr, TRUE);
+
+    clear();
 
     getmaxyx(stdscr, h, w);
     y = h/2;
@@ -137,32 +151,46 @@ int main(){
     nocbreak();
     echo();
     curs_set(1);
+
+    pre_id=calloc(I_MAX,sizeof(int));
+    srtr_ai(NULL,keyList,idList,AILV,pre_id);
     pre=malloc(sizeof(char)*C_MAX);
-    pre="しりとり";
-    if(mflag) pre="CPU";
+    itos(pre_id,pre);
+    idList[0]=calloc(I_MAX,sizeof(int));
+    intcpy(idList[0],pre_id);
+
     while(1){
+
+        if(i%2!=0){
+            bkgdset(COLOR_PAIR(0));
+            idcok(stdscr,true);
+        }
+        else{
+            bkgdset(A_REVERSE);
+            idcok(stdscr,false);
+        }
         flushinp();
         erase();
         mvprintw(cy,cx-strlen(pre)/2-10,pre);
         mvprintw(cy,cx-strlen(str7)/2-5,str7);
         refresh();
 
+        idList[i]=(int *)calloc(I_MAX,sizeof(int));
         pthread_create( &th, NULL, thread, (void *)NULL );
         c=malloc(sizeof(char)*C_MAX);
         if(!mflag) scanw("%s",c);
         else{
-            if(i%2==0) scanw("%s",c);
+            if(i%2!=0) scanw("%s",c);
             else{
                 p=(int *)calloc(I_MAX,sizeof(int));
                 pre=malloc(sizeof(char)*C_MAX);
-                if(srtr_ai(idList[i-1],keyList,idList,1,p)) c="もうむり\0";
+                if(srtr_ai(pre_id,keyList,idList,1,p)) c="もうむり\0";
                 else itos(p,c);
                 pri_ai(cy,cx,c);
             }
         }
-
         buf=(int *)calloc(I_MAX,sizeof(int));
-        while(input_word(c,buf)!=0&&!endflag){
+        while(input_word(c,buf)!=0&&!timeflag){
             c=malloc(sizeof(char)*C_MAX);
             erase();
             mvprintw(cy,cx-strlen(pre)/2-10,pre);
@@ -172,44 +200,60 @@ int main(){
         }
         pthread_cancel(th);
 
-        idList[i]=(int *)calloc(I_MAX,sizeof(int));
-        if(endflag==1){
+        if(timeflag==1){
             eflag=1;
             break;
         }
-        else if(searchid(buf,keyList)){
-            eflag=2;
-            break;
-        }
-        else if(!searchid(buf,idList)){
-            eflag=3;
-            break;
-        }
-        else if(i!=0&&!match_id(idList[i-1],buf)){
-            eflag=4;
-            break;
-        }
-        j=0;
-        while(buf[j]!=0){
-            idList[i][j]=buf[j]; j++;
+        else{
+            char *tes=malloc(sizeof(char)*C_MAX);
+            itos(idList[0],tes);
+            switch(judgeStr(pre_id,buf,idList,keyList)){
+                case 0: eflag=0; break;
+                case 1: eflag=2; break;
+                case 2: eflag=3; break;
+                case 3: eflag=4; break;
+                case 4: eflag=5; break;
+                default : eflag=-1; break;
+            }
+            if(eflag!=0) break;
         }
 
-        i++;
+        j=0;
+        intcpy(idList[i],buf);
+
         pre=malloc(sizeof(char)*C_MAX);
         strcpy(pre,c);
+        pre_id=calloc(I_MAX,sizeof(int));
+        intcpy(pre_id,idList[i]);
+        i++;
     }
     cbreak();
     timeout(-1);
     while(1){
         erase();
+        if(mflag){
+            if(i%2==0){
+                bkgdset(A_NORMAL);
+                attrset(COLOR_PAIR(1));
+                clear();
+                mvprintw(cy-2,cx-strlen(str13)/2,str13);
+            }else{
+                bkgdset(A_REVERSE);
+                clear();
+                attron(COLOR_PAIR(2));
+                mvprintw(cy-2,cx-strlen(str14)/2,str14);
+            }
+            attrset(COLOR_PAIR(0));
+        }
         switch(eflag){
             case 1: mvprintw(cy,cx-strlen(str8)/2+4,str8); break;
             case 2: mvprintw(cy,cx-strlen(str9)/2+4,str9,c); break;
             case 3: mvprintw(cy,cx-strlen(str10)/2+4,str10,c); break;
             case 4: mvprintw(cy,cx-strlen(str11)/2+8,str11,c); break;
+            case 5: mvprintw(cy,cx-strlen(str12)/2+8,str12,c); break;
             default: mvprintw(cy,cx-strlen("ERROR")/2+8,"ERROR"); break; 
         }
-        mvprintw(cy+1,cx-strlen(str12)/2,str12);
+        mvprintw(cy+1,cx-strlen(str1)/2,str1);
         refresh();
         key = getch();
         if(key==27) break;
