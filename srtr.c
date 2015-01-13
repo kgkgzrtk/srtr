@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <syslog.h>
 #include "MT.h"
 
 #define C_MAX 301
@@ -25,7 +24,8 @@ int input_word(char *s, int *list){
 int input_file(char *fname,int** s){
     FILE *fp;
     int i=0,val=0,n=0;
-    char *a,c;
+    int c;
+    char *a;
     fp = fopen(fname, "r");
     if( fp == NULL ) return 1;
 
@@ -140,6 +140,7 @@ int match_id(int *pre_str, int *str){
     if(pre_str[i-1]==84) i--;
     if(pre_str[i-2]==str[0]&&pre_str[i-1]==str[1]) return 0;
     if(pre_str[i-1]%2==1&&pre_str[i-1]<10) pre_str[i-1]++;
+    if(pre_str[i-1]%2==1&&(66<pre_str[i-1]&&pre_str[i-1]<72)) pre_str[i-1]++; //大介担当
     if(pre_str[i-1]==str[0]) return 0;
     else return 1;
 }
@@ -187,20 +188,19 @@ int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     if(pre_str==NULL) match_flag=1;
     if(match_flag){
         while(judgeStr(pre_str,key_id,idList,keyList)){
-            if(pre_str!=NULL) napms((int)((k/2)/lv));
+            if(pre_str!=NULL) if(!randd(0,(int)(lv*5))) napms(100);
             key_id=(int *)calloc(100,sizeof(int));
             intcpy(key_id,keyList[randd(0,k-1)]);
             i++;
-            if(pre_str!=NULL) if(i>k*2) return 1;
             if(i>k*100) return 1;
         }
     }else{
         while(match_id(pre_str,key_id)||!lastisN(key_id)){
-            if(pre_str!=NULL) napms((int)((k/2)/lv));
+            if(pre_str!=NULL) if(!randd(0,lv*5)) napms(100);
             key_id=(int *)calloc(100,sizeof(int));
             intcpy(key_id,keyList[randd(0,k-1)]);
             i++;
-            if(i>k) return 1;
+            if(i>k*100) return 1;
         }
     }
     intcpy(p,key_id);

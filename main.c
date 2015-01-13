@@ -10,12 +10,21 @@
 #define I_MAX 100
 #define K_MAX 2000
 #define CNT_MAX 40
-#define AILV 2
-#define FILENAME "poke.txt"
+#define AILV 1
+#define FILENAME1 "pokemon.txt"
+#define FILENAME2 "kokumei.txt"
 
+pthread_t th1,th2;
 int timeflag=0;
+int tscore=0;
+int score=0;
 
-void* thread(void* args){
+void* getWord(void* str){
+        pthread_testcancel();
+        getstr((char *)str);
+        return NULL;
+}
+void* timer(void* args){
     int i=0,k;
     char *pro=(char *)malloc(sizeof(char)*C_MAX);
     for(k=0;k<CNT_MAX;k++){
@@ -24,25 +33,32 @@ void* thread(void* args){
     pro[k]='\0';
     k--;
     while(i<CNT_MAX){
-        pthread_testcancel();
+        tscore=CNT_MAX-i;
         printf("\e]0;%s\007",pro);
         refresh();
         if(i>CNT_MAX-4) flash();
         pro[k]='\0';
+        pthread_testcancel();
         napms(500);
         k--;i++;
     }
-    timeout(0);
+    pthread_cancel(th1);
     timeflag=1;
-    return NULL;
+    return 0;
+}
+
+int user_input(char *str){
+    pthread_create( &th1, NULL, getWord, (void*)str );
+    pthread_create( &th2, NULL, timer, (void *)NULL );
+    pthread_join(th1, NULL);
+    pthread_cancel(th2);
+    return 0; 
 }
 
 void pri_ai(int y,int x,char *c){
     int i;
     curs_set(0);
-    raw();
     noecho();
-    cbreak();
     napms(500);
     for(i=0;i<strlen(c)/3;i++){
         mvprintw(y,x+2*i-3,"%c%c%c",c[3*i],c[3*i+1],c[3*i+2]);
@@ -50,9 +66,7 @@ void pri_ai(int y,int x,char *c){
         napms(500);
     }
     curs_set(1);
-    noraw();
     echo();
-    nocbreak();
 }
 
 int main(){
@@ -63,8 +77,8 @@ int main(){
     int *p;
     int *pre_id;
     int i=1,j,mflag=0,eflag=0;
-    char *c,*pre;
-    pthread_t th;
+    char *instr,*pre;
+    char *filename;
 
     int  x, y, w, h;
     char *str="し　り　ト　レ";
@@ -82,7 +96,11 @@ int main(){
     char *str12="最後の文字が「ん」です";
     char *str13="YOU WIN! ( ^ - ^ )";
     char *str14="YOU LOSE... (. _ . )";
+    char *str15="ジャンル選択";
+    char *str16="ポケモン";
+    char *str17="　国名　";
     int key;
+
 
     setlocale(LC_ALL,"");
     printf("\e]0;しりトレ\007");
@@ -96,6 +114,7 @@ int main(){
 
     noecho();
     cbreak();
+    raw();
     curs_set(0);
     keypad(stdscr, TRUE);
 
@@ -138,17 +157,43 @@ int main(){
             case KEY_DOWN:	y=cy+1; break;
         }
     }
+    y=cy;
+    while(1){
+        erase();
+        mvprintw(cy-3,cx-strlen(str15)/2+3,str15);
+        mvprintw(cy+1,cx-10,str16);
+        mvprintw(cy+2,cx-10,str17);
+        mvprintw(y+1,cx-strlen(str5)+10,str5);
+        refresh();
+
+        key = getch();
+        if (key == 'q'){
+            endwin();
+            return 0;
+        }
+        if (key == 10 && y==cy){
+            filename=FILENAME1;
+            break;
+        }else if(key==10 && y==cy+1){
+            filename=FILENAME2;
+            break;
+        }
+        switch (key) {
+            case KEY_UP:	y=cy; break;
+            case KEY_DOWN:	y=cy+1; break;
+        }
+    }
 
     idList=malloc(sizeof(int *)*K_MAX);
     keyList=malloc(sizeof(int *)*K_MAX);
-    if(input_file(FILENAME,keyList)){
+    if(input_file(filename,keyList)){
         endwin();
+        printf("ファイルが開けません\n");
         free(keyList);
         free(idList);
         return 0;
     }
 
-    nocbreak();
     echo();
     curs_set(1);
 
@@ -158,6 +203,8 @@ int main(){
     itos(pre_id,pre);
     idList[0]=calloc(I_MAX,sizeof(int));
     intcpy(idList[0],pre_id);
+    score=0;
+    key=0;
 
     while(1){
 
@@ -171,34 +218,38 @@ int main(){
         }
         flushinp();
         erase();
+        mvprintw(cy+2,cx-11,"SCORE:%d",score);
         mvprintw(cy,cx-strlen(pre)/2-10,pre);
         mvprintw(cy,cx-strlen(str7)/2-5,str7);
         refresh();
 
         idList[i]=(int *)calloc(I_MAX,sizeof(int));
-        pthread_create( &th, NULL, thread, (void *)NULL );
-        c=malloc(sizeof(char)*C_MAX);
-        if(!mflag) scanw("%s",c);
-        else{
-            if(i%2!=0) scanw("%s",c);
-            else{
+        instr=(char *)malloc(sizeof(char)*C_MAX);
+        instr=malloc(sizeof(char)*C_MAX);
+        if(!mflag){
+            user_input(instr);
+        }else{
+            if(i%2!=0){
+                user_input(instr);
+            }else{
                 p=(int *)calloc(I_MAX,sizeof(int));
                 pre=malloc(sizeof(char)*C_MAX);
-                if(srtr_ai(pre_id,keyList,idList,1,p)) c="もうむり\0";
-                else itos(p,c);
-                pri_ai(cy,cx,c);
+                if(srtr_ai(pre_id,keyList,idList,AILV,p)) instr="もうむり\0";
+                else itos(p,instr);
+                pri_ai(cy,cx,instr);
             }
         }
         buf=(int *)calloc(I_MAX,sizeof(int));
-        while(input_word(c,buf)!=0&&!timeflag){
-            c=malloc(sizeof(char)*C_MAX);
+        while(input_word(instr,buf)!=0&&!timeflag){
+            instr=malloc(sizeof(char)*C_MAX);
             erase();
             mvprintw(cy,cx-strlen(pre)/2-10,pre);
             mvprintw(cy,cx-strlen(str7)/2-5,str7);
             refresh();
-            scanw("%s",c);
+            user_input(instr);
         }
-        pthread_cancel(th);
+        pthread_cancel(th2);
+        if(i%2!=0) score+=tscore;
 
         if(timeflag==1){
             eflag=1;
@@ -222,12 +273,11 @@ int main(){
         intcpy(idList[i],buf);
 
         pre=malloc(sizeof(char)*C_MAX);
-        strcpy(pre,c);
+        strcpy(pre,instr);
         pre_id=calloc(I_MAX,sizeof(int));
         intcpy(pre_id,idList[i]);
         i++;
     }
-    cbreak();
     timeout(-1);
     while(1){
         erase();
@@ -247,10 +297,10 @@ int main(){
         }
         switch(eflag){
             case 1: mvprintw(cy,cx-strlen(str8)/2+4,str8); break;
-            case 2: mvprintw(cy,cx-strlen(str9)/2+4,str9,c); break;
-            case 3: mvprintw(cy,cx-strlen(str10)/2+4,str10,c); break;
-            case 4: mvprintw(cy,cx-strlen(str11)/2+8,str11,c); break;
-            case 5: mvprintw(cy,cx-strlen(str12)/2+8,str12,c); break;
+            case 2: mvprintw(cy,cx-strlen(str9)/2+4,str9,instr); break;
+            case 3: mvprintw(cy,cx-strlen(str10)/2+4,str10,instr); break;
+            case 4: mvprintw(cy,cx-strlen(str11)/2+8,str11,instr); break;
+            case 5: mvprintw(cy,cx-strlen(str12)/2+8,str12,instr); break;
             default: mvprintw(cy,cx-strlen("ERROR")/2+8,"ERROR"); break; 
         }
         mvprintw(cy+1,cx-strlen(str1)/2,str1);
