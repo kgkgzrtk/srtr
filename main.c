@@ -24,6 +24,7 @@ void* getWord(void* str){
         getstr((char *)str);
         return NULL;
 }
+
 void* timer(void* args){
     int i=0,k;
     char *pro=(char *)malloc(sizeof(char)*C_MAX);
@@ -234,8 +235,10 @@ int main(){
             }else{
                 p=(int *)calloc(I_MAX,sizeof(int));
                 pre=malloc(sizeof(char)*C_MAX);
+                pthread_create( &th2, NULL, timer, (void *)NULL );
                 if(srtr_ai(pre_id,keyList,idList,AILV,p)) instr="もうむり\0";
                 else itos(p,instr);
+                pthread_cancel(th2);
                 pri_ai(cy,cx,instr);
             }
         }
@@ -287,6 +290,7 @@ int main(){
                 attrset(COLOR_PAIR(1));
                 clear();
                 mvprintw(cy-2,cx-strlen(str13)/2,str13);
+                mvprintw(cy+4,cx-5,"Score:%d",score);
             }else{
                 bkgdset(A_REVERSE);
                 clear();
