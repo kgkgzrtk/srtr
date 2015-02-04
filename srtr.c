@@ -13,7 +13,8 @@ int input_word(char *s, int *list){
     int i,j;
     int *h=(int *)calloc(I_MAX,sizeof(int));
     int val = (int)(strlen(s)/3);
-
+    
+    if(val==0) return 1;
     if(stoCode(s,h)) return 1;
     if(checkStyle(h, val)) return 1;
     for(i=0;i<val;i++) list[i]=toid(h[i]);
@@ -176,13 +177,11 @@ int srtr_ai(int *pre_str, int **keyList, int **idList, int lv, int *p){
     int match_flag=0;
     int mood=1;
     int *key_id=(int *)calloc(100,sizeof(int));
-    char *c=malloc(sizeof(char)*100);
     init_randd();
     while(keyList[k][0]!=0){
         if(!judgeStr(pre_str,keyList[k],idList,keyList)) match_flag=1;
         k++;
     }
-    itos(keyList[randd(0,k-1)],c);
     intcpy(key_id,keyList[randd(0,k-1)]);
     if(!randd(0,lv)) match_flag=0;
     if(pre_str==NULL) match_flag=1;

@@ -9,20 +9,58 @@
 #define C_MAX 301
 #define I_MAX 100
 #define K_MAX 2000
-#define CNT_MAX 40
+#define CNT_MAX 10
 #define AILV 1
 #define FILENAME1 "pokemon.txt"
 #define FILENAME2 "kokumei.txt"
 
-pthread_t th1,th2;
+pthread_t th1,th2,th3;
+int th_a1,th_a3;
 int timeflag=0;
 int tscore=0;
 int score=0;
+int cy;
+int cx;
+
+typedef struct ai_nord{
+    int *p_str;
+    int **list1;
+    int **list2;
+    int *c_str;
+    char *i_str;
+}ai_t;
+
+void* getWord(void* str);
+void* getWord_ai(void* ai);
+void* timer(void* args);
+int user_input(char *str);
+int ai_input(ai_t *a);
+int pri_ai(int y,int x,char *c);
+
 
 void* getWord(void* str){
-        pthread_testcancel();
-        getstr((char *)str);
-        return NULL;
+    th_a1=1;
+    pthread_testcancel();
+    getstr((char *)str);
+    th_a1=0;
+    return NULL;
+}
+
+void* getWord_ai(void* ai){
+    th_a3=1;
+    char *c;
+    ai_t *ap=(ai_t *)ai;
+    pthread_testcancel();
+    if(srtr_ai(ap->p_str,ap->list1,ap->list2,AILV,ap->c_str)){
+        ap->c_str[0]=66;
+        ap->c_str[1]=6;
+        ap->c_str[2]=64;
+        ap->c_str[3]=74;
+    }
+    itos(ap->c_str,ap->i_str);
+    pri_ai(cy,cx,ap->i_str);
+    th_a3=0;
+    return NULL;
 }
 
 void* timer(void* args){
@@ -43,31 +81,37 @@ void* timer(void* args){
         napms(500);
         k--;i++;
     }
-    pthread_cancel(th1);
+    if(th_a1) pthread_cancel(th1);
+    if(th_a3) pthread_cancel(th3);
     timeflag=1;
     return 0;
 }
 
 int user_input(char *str){
     pthread_create( &th1, NULL, getWord, (void*)str );
-    pthread_create( &th2, NULL, timer, (void *)NULL );
     pthread_join(th1, NULL);
-    pthread_cancel(th2);
     return 0; 
 }
 
-void pri_ai(int y,int x,char *c){
+int ai_input(ai_t *a){
+    pthread_create( &th3, NULL, getWord_ai, (void*)a );
+    pthread_join(th3, NULL);
+    return 0;
+}
+
+int pri_ai(int y,int x,char *c){
     int i;
     curs_set(0);
     noecho();
     napms(500);
-    for(i=0;i<strlen(c)/3;i++){
+    for(i=0;i<(int)(strlen(c)/3);i++){
         mvprintw(y,x+2*i-3,"%c%c%c",c[3*i],c[3*i+1],c[3*i+2]);
         refresh();
         napms(500);
     }
     curs_set(1);
     echo();
+    return 0;
 }
 
 int main(){
@@ -80,6 +124,7 @@ int main(){
     int i=1,j,mflag=0,eflag=0;
     char *instr,*pre;
     char *filename;
+    ai_t *ai=malloc(sizeof(ai_t *));
 
     int  x, y, w, h;
     char *str="し　り　ト　レ";
@@ -124,8 +169,8 @@ int main(){
     getmaxyx(stdscr, h, w);
     y = h/2;
     x = w/2;
-    const int cy=y;
-    const int cx=x;
+    cy=y;
+    cx=x;
 
     while (1){
         erase();
@@ -226,7 +271,9 @@ int main(){
 
         idList[i]=(int *)calloc(I_MAX,sizeof(int));
         instr=(char *)malloc(sizeof(char)*C_MAX);
-        instr=malloc(sizeof(char)*C_MAX);
+
+        pthread_create( &th2, NULL, timer, (void *)NULL );
+
         if(!mflag){
             user_input(instr);
         }else{
@@ -235,22 +282,32 @@ int main(){
             }else{
                 p=(int *)calloc(I_MAX,sizeof(int));
                 pre=malloc(sizeof(char)*C_MAX);
-                pthread_create( &th2, NULL, timer, (void *)NULL );
-                if(srtr_ai(pre_id,keyList,idList,AILV,p)) instr="もうむり\0";
-                else itos(p,instr);
-                pthread_cancel(th2);
-                pri_ai(cy,cx,instr);
+                ai=malloc(sizeof(ai_t *));
+                ai->p_str=(int *)calloc(I_MAX,sizeof(int));
+                ai->list1=malloc(sizeof(int *)*K_MAX);
+                ai->list2=malloc(sizeof(int *)*K_MAX);
+                ai->c_str=(int *)calloc(I_MAX,sizeof(int));
+                ai->i_str=malloc(sizeof(char)*C_MAX);
+                
+                ai->p_str=pre_id;
+                ai->list1=keyList;
+                ai->list2=idList;
+                ai->c_str=p;
+                ai->i_str=instr;
+                ai_input(ai);
             }
         }
         buf=(int *)calloc(I_MAX,sizeof(int));
         while(input_word(instr,buf)!=0&&!timeflag){
             instr=malloc(sizeof(char)*C_MAX);
             erase();
+            mvprintw(cy+2,cx-11,"SCORE:%d",score);
             mvprintw(cy,cx-strlen(pre)/2-10,pre);
             mvprintw(cy,cx-strlen(str7)/2-5,str7);
             refresh();
             user_input(instr);
         }
+
         pthread_cancel(th2);
         if(i%2!=0) score+=tscore;
 
@@ -259,8 +316,6 @@ int main(){
             break;
         }
         else{
-            char *tes=malloc(sizeof(char)*C_MAX);
-            itos(idList[0],tes);
             switch(judgeStr(pre_id,buf,idList,keyList)){
                 case 0: eflag=0; break;
                 case 1: eflag=2; break;
@@ -290,7 +345,7 @@ int main(){
                 attrset(COLOR_PAIR(1));
                 clear();
                 mvprintw(cy-2,cx-strlen(str13)/2,str13);
-                mvprintw(cy+4,cx-5,"Score:%d",score);
+                mvprintw(cy+2,cx-5,"%s",score);
             }else{
                 bkgdset(A_REVERSE);
                 clear();
